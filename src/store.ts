@@ -2,11 +2,11 @@ import { create } from "zustand";
 
 interface BaseSpreadSheetStore {
   rowsData: any[];
-  columns: any[];
+  columns: string[];
   selected: string[];
   actions: {
     setRowsData: (rowsData: any[]) => void;
-    setColumns: (columns: any[]) => void;
+    setColumns: (columns: string[]) => void;
     onSelectRow: (rowId: string, action: "select" | "deselect") => void;
   };
 }

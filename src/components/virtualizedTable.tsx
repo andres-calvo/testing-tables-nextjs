@@ -5,17 +5,14 @@ const VirtualTable = () => {
   const parentRef = useRef(null);
   const [rowData, setRowData] = useState([]);
   const [columns, setColumns] = useState([]);
-  const rowVirtualizer = useVirtualizer({
-    count: rowData.length,
-    estimateSize: () => 40,
-    getScrollElement: () => parentRef.current,
-  });
+  const headerCount = 1;
   const columnVirtualizer = useVirtualizer({
     horizontal: true,
     count: columns.length,
     estimateSize: (i) => 200,
     getScrollElement: () => parentRef.current,
   });
+
   useEffect(() => {
     fetch("http://localhost:4000/api").then(async (res) => {
       const { columnsData, rowsData } = await res.json();
@@ -23,20 +20,21 @@ const VirtualTable = () => {
       setColumns(columnsData);
     });
   }, []);
-
+  const rowHeight = 40
   return (
     <div className="w-2/3 h-96 overflow-auto text-black" ref={parentRef}>
       <div
+        className=""
         style={{
           width: `${columnVirtualizer.getTotalSize()}px`,
-          height: `${rowVirtualizer.getTotalSize()}px`,
+          height: `${(rowData.length + headerCount) * rowHeight}px`,
           position: "relative",
         }}
       >
         <div
-          className="sticky top-0 border border-gray-500 shadow-lg z-10"
+          className="sticky top-0 border border-gray-500 shadow-lg z-10 bg-white"
           style={{
-            height: 40,
+            height: rowHeight,
           }}
         >
           {columnVirtualizer.getVirtualItems().map((col) => (
@@ -44,7 +42,7 @@ const VirtualTable = () => {
               key={col.key}
               className="border"
               style={{
-                height: 40,
+                height: rowHeight,
                 position: "absolute",
                 top: 0,
                 left: 0,
@@ -56,23 +54,22 @@ const VirtualTable = () => {
             </div>
           ))}
         </div>
-        {rowVirtualizer.getVirtualItems().map((row) => (
-          <Fragment key={row.key}>
+        {rowData.map((row, index) => (
+          <Fragment key={row.id}>
             {columnVirtualizer.getVirtualItems().map((col) => (
               <div
-                key={`${row.key}/${col.key}`}
+                key={`${row}/${col.key}`}
                 style={{
                   position: "absolute",
-                  height: row.size,
+                  height: rowHeight,
                   width: col.size,
                   top: 0,
                   left: 0,
-                  transform: `translateX(${col.start}px) translateY(${
-                    row.start + 40
-                  }px)`,
+                  transform: `translateX(${col.start}px) translateY(${(index + headerCount) * rowHeight
+                    }px)`,
                 }}
               >
-                {rowData[row.index][columns[col.index]]}
+                {rowData[index][columns[col.index]]}
               </div>
             ))}
           </Fragment>
