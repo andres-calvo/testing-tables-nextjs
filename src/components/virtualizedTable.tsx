@@ -54,7 +54,7 @@ const VirtualTable = () => {
             </div>
           ))}
         </div>
-        {rowData.map((row, index) => (
+        {/* {rowData.map((row, index) => (
           <Fragment key={row.id}>
             {columnVirtualizer.getVirtualItems().map((col) => (
               <div
@@ -73,7 +73,7 @@ const VirtualTable = () => {
               </div>
             ))}
           </Fragment>
-        ))}
+        ))} */}
       </div>
 
       <p className="fixed bottom-0">
