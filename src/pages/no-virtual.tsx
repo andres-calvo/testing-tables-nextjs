@@ -1,10 +1,11 @@
-import VirtualTable from "@/components/virtualizedTanstack";
+import Table from "@/components/noVirtualizedTable";
 import { useBaseSpreadsheetStore } from "@/store";
 import { useEffect, useRef } from "react";
 
-const Test3 = () => {
+const NoVirtualpage = () => {
     const actions = useBaseSpreadsheetStore((state) => state.actions);
     const hasCalled = useRef(false)
+
     useEffect(() => {
         if (!hasCalled.current) {
             hasCalled.current = true
@@ -16,7 +17,7 @@ const Test3 = () => {
         }
 
     }, []);
-    return <VirtualTable />;
+    return <Table />;
 };
 
-export default Test3;
+export default NoVirtualpage;

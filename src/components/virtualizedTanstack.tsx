@@ -1,14 +1,14 @@
 import { useBaseSpreadsheetStore } from "@/store";
 import { ColumnDef, Row, flexRender, getCoreRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { useMemo, useRef } from "react";
+import { VirtualItem, useVirtualizer } from "@tanstack/react-virtual";
+import { useCallback, useMemo, useRef } from "react";
 
 const VirtualizedTanstackTable = () => {
   const rowData = useBaseSpreadsheetStore((state) => state.rowsData);
   const columns = useBaseSpreadsheetStore((state) => state.columns);
   const tableCols = useMemo(() => columns.map(col => ({
-    accessorKey: col,
-    header: col,
+    accessorKey: col.name,
+    header: col.label,
     size: 200,
   })), [columns])
 
@@ -18,6 +18,7 @@ const VirtualizedTanstackTable = () => {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     debugTable: true,
+
   })
 
   const { rows } = table.getRowModel()
@@ -30,23 +31,16 @@ const VirtualizedTanstackTable = () => {
   //we are using a slightly different virtualization strategy for columns (compared to virtual rows) in order to support dynamic row heights
   const columnVirtualizer = useVirtualizer({
     count: visibleColumns.length,
-    estimateSize: index => visibleColumns[index].getSize(), //estimate width of each column for accurate scrollbar dragging
-    getScrollElement: () => tableContainerRef.current,
+    estimateSize: useCallback((index => visibleColumns[index].getSize()),[visibleColumns]), //estimate width of each column for accurate scrollbar dragging
+    getScrollElement: useCallback(() => tableContainerRef.current,[]),
     horizontal: true,
     overscan: 3, //how many columns to render on each side off screen each way (adjust this for performance)
   })
-
   //dynamic row height virtualization - alternatively you could use a simpler fixed row height strategy without the need for `measureElement`
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
-    estimateSize: () => 33, //estimate row height for accurate scrollbar dragging
-    getScrollElement: () => tableContainerRef.current,
-    //measure dynamic row height, except in firefox because it measures table border height incorrectly
-    measureElement:
-      typeof window !== 'undefined' &&
-        navigator.userAgent.indexOf('Firefox') === -1
-        ? element => element?.getBoundingClientRect().height
-        : undefined,
+    estimateSize: useCallback(() => 44,[]), //estimate row height for accurate scrollbar dragging
+    getScrollElement: useCallback(() => tableContainerRef.current,[]),
     overscan: 5,
   })
 
@@ -66,75 +60,53 @@ const VirtualizedTanstackTable = () => {
 
   return (
     <div
-      className="container"
+      className="overflow-auto relative h-[500px]"
       ref={tableContainerRef}
-      style={{
-        overflow: 'auto', //our scrollable table container
-        position: 'relative', //needed for sticky header
-        height: '500px', //should be a fixed height,
-      }}
     >
       {/* Even though we're still using sematic table tags, we must use CSS grid and flexbox for dynamic row heights */}
-      <table style={{ display: 'grid' }}>
+      <table className="grid" >
         <thead
-          style={{
-            display: 'grid',
-            position: 'sticky',
-            top: 0,
-            zIndex: 1,
-          }}
+          className="grid sticky top-0 z-[1]"
         >
           {table.getHeaderGroups().map(headerGroup => (
             <tr
               key={headerGroup.id}
-              style={{ display: 'flex', width: '100%' }}
+              className="flex w-full"
             >
               {virtualPaddingLeft ? (
                 //fake empty column to the left for virtualization scroll padding
-                <th style={{ display: 'flex', width: virtualPaddingLeft }} />
+                <th className="flex" style={{ width: virtualPaddingLeft }} />
               ) : null}
               {virtualColumns.map(vc => {
                 const header = headerGroup.headers[vc.index]
                 return (
                   <th
                     key={header.id}
+                    className="flex"
                     style={{
-                      display: 'flex',
                       width: header.getSize(),
                     }}
                   >
-                    <div
-                      {...{
-                        className: header.column.getCanSort()
-                          ? 'cursor-pointer select-none'
-                          : '',
-                        onClick: header.column.getToggleSortingHandler(),
-                      }}
-                    >
+                    <div>
                       {flexRender(
                         header.column.columnDef.header,
                         header.getContext()
                       )}
-                      {{
-                        asc: ' 🔼',
-                        desc: ' 🔽',
-                      }[header.column.getIsSorted() as string] ?? null}
                     </div>
                   </th>
                 )
               })}
               {virtualPaddingRight ? (
                 //fake empty column to the right for virtualization scroll padding
-                <th style={{ display: 'flex', width: virtualPaddingRight }} />
+                <th className="flex" style={{ width: virtualPaddingRight }} />
               ) : null}
             </tr>
           ))}
         </thead>
         <tbody
+          className="grid relative"
           style={{
-            display: 'grid',
             height: `${rowVirtualizer.getTotalSize()}px`, //tells scrollbar how big the table is
-            position: 'relative', //needed for absolute positioning of rows
           }}
         >
           {virtualRows.map(virtualRow => {
@@ -143,14 +115,10 @@ const VirtualizedTanstackTable = () => {
 
             return (
               <tr
-                data-index={virtualRow.index} //needed for dynamic row height measurement
-                ref={node => rowVirtualizer.measureElement(node)} //measure dynamic row height
                 key={row.id}
+                className="flex absolute w-full h-11"
                 style={{
-                  display: 'flex',
-                  position: 'absolute',
                   transform: `translateY(${virtualRow.start}px)`, //this should always be a `style` as it changes on scroll
-                  width: '100%',
                 }}
               >
                 {virtualPaddingLeft ? (
@@ -191,3 +159,7 @@ const VirtualizedTanstackTable = () => {
   )
 }
 export default VirtualizedTanstackTable;
+
+const TableRow = ({virtualRow}:{virtualRow:VirtualItem})=>{
+
+}
